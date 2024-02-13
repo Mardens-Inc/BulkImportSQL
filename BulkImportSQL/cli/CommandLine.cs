@@ -31,6 +31,7 @@ public sealed class CommandLine
         _optionsManager.Add(new Option("ps", "processes", false, true, $"The number of processes to use. Default is {Environment.ProcessorCount}"));
         _optionsManager.Add(new Option("j", "json", false, true, "To output the results in json format, specify this flag and a file name. Ex: -j results.json"));
         _optionsManager.Add(new Option("sm", "silent", false, false, "This mode will not print any output to the console, perfect for headless operations"));
+        _optionsManager.Add(new Option("cp", "port", false, true, "The port to connect to the server. Default is 3306"));
     }
 
     /// <summary>
@@ -57,6 +58,7 @@ public sealed class CommandLine
             {
                 InputFile = inputFile,
                 Server = server,
+                Port = GetConnectionPort(parser),
                 Database = database,
                 Table = table,
                 Username = username,
@@ -186,6 +188,14 @@ public sealed class CommandLine
         if (!int.TryParse(b, out int batchSize)) throw new ArgumentException($"The batch size must be an integer. {b} is not an integer.");
         return batchSize;
     }
+
+    private static int GetConnectionPort(OptionsParser parser)
+    {
+        if (!parser.IsPresent("cp", out string port)) return 3306;
+        if (!int.TryParse(port, out int portNumber)) throw new ArgumentException($"The port number must be an integer. {port} is not an integer.");
+        return portNumber;
+    }
+
 
     /// <summary>
     /// Executes the command line arguments parsing and returns the parsed arguments.
