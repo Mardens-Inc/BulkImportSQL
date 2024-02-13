@@ -25,7 +25,7 @@ public sealed class CommandLine
         _optionsManager.Add(new Option("p", "password", true, true, "The password to connect with"));
 
         // Define command line arguments that are optional for the application
-        _optionsManager.Add(new Option("c", "columns", false, true, "The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma. Ex: column1,column2,column3"));
+        _optionsManager.Add(new Option("c", "columns", false, true, "The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma. Make sure to url encode this argument. Ex: column1,column2,column3%20with%20spaces"));
         _optionsManager.Add(new Option("e", "element", false, true, "If the input json has a sub element, specify the element to import. Ex: [{\"import_data\":{\"column1\":1,\"column2\":2}}] vs [{\"column1\":1,\"column2\":2}]"));
         _optionsManager.Add(new Option("b", "batch", false, true, "The batch size to import. Default is 1000"));
         _optionsManager.Add(new Option("ps", "processes", false, true, $"The number of processes to use. Default is {Environment.ProcessorCount}"));
