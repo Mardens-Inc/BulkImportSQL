@@ -46,15 +46,6 @@ public sealed class CommandLine
         parser.IsPresent("u", out string username);
         parser.IsPresent("p", out string password);
 
-        // Attempt to connect using the parsed server, database, username and password
-        // If unable to connect, display a console error message and exit with InvalidArguments code
-        if (!SQLManager.Connect(server, database, username, password))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"Unable to connect to the server {server} with the database {database} using the username {username} and the password provided.");
-            Console.ResetColor();
-            Environment.Exit((byte)ExitCodes.InvalidArguments);
-        }
 
         // If the connection is successful, then continue to try to parse and fetch additional information
         try
