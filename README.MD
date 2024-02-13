@@ -37,7 +37,7 @@ In addition to the required arguments, the tool provides some optional ones. Her
 
 | Short | Long | Description |
 | :---- | :--- | :---------- |
-| -c | --columns | The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma. Ex: column1,column2,column3 |
+| -c | --columns | The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma. Make sure to url encode this argument. Ex: column1,column2,column3%20with%20spaces |
 | -e | --element | If the input json has a sub element, specify the element to import. |
 | -b | --batch | The batch size to import. Default is 1000 |
 | -ps | --processes | The number of processes to use. Default is the available processors count |
