@@ -16,6 +16,11 @@ public struct ArgumentFields()
     public string Server { get; set; } = "";
 
     /// <summary>
+    /// Represents the port used for the connection.
+    /// </summary>
+    public int Port { get; set; } = 3306;
+
+    /// <summary>
     /// Represents a database connection and related properties.
     /// </summary>
     public string Database { get; set; } = "";
