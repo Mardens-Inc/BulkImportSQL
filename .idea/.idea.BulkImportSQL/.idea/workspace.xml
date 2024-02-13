@@ -7,18 +7,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a7ed3b85-8428-40ca-b963-0b299ca1716e" name="Changes" comment="Add .gitignore file&#10;&#10;This commit introduces a .gitignore file to the project in order to ignore unnecessary files and directories such as build outputs and IDE-specific files. As a result, these files and directories won't be tracked by Git, reducing unnecessary noise in the repository.">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.BlukImportSQL/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.BulkImportSQL/.idea/indexLayout.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.BulkImportSQL/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.BulkImportSQL/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.BulkImportSQL/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BulkImportSQL/BulkImportSQL.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BulkImportSQL/ExitCodes.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BulkImportSQL/Program.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BulkImportSQL/cli/ArgumentFields.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BulkImportSQL/cli/CommandLine.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/BulkImportSQL/sql/SQLManager.cs" afterDir="false" />
+    <list default="true" id="a7ed3b85-8428-40ca-b963-0b299ca1716e" name="Changes" comment="Add new BulkImportSQL/Program.cs file&#10;&#10;A new Program.cs file has been added under the BulkImportSQL directory. This file currently contains an empty main method and will serve as the entry point for the application.">
+      <change afterPath="$PROJECT_DIR$/.run/BulkImportSQL.run.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/BulkImportSQL.sln.DotSettings.user" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.BulkImportSQL/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.BulkImportSQL/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BulkImportSQL.sln" beforeDir="false" afterPath="$PROJECT_DIR$/BulkImportSQL.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BulkImportSQL/BulkImportSQL.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/BulkImportSQL/BulkImportSQL.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BulkImportSQL/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/BulkImportSQL/Program.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +30,8 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/fa44f20cfe8d49b0927d15af97d7fddb2a00/bf/4e4fcdd6/Option.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/BulkImportSQL/Program.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/BulkImportSQL/cli/CommandLine.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -55,6 +52,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     ".NET Project.BulkImportSQL.executor": "Debug",
+    "ASKED_ADD_EXTERNAL_FILES": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
@@ -74,26 +72,6 @@
     ]
   }
 }]]></component>
-  <component name="RunManager">
-    <configuration name="BulkImportSQL" type="DotNetProject" factoryName=".NET Project">
-      <option name="EXE_PATH" value="$PROJECT_DIR$/BulkImportSQL/bin/Debug/net8.0/BulkImportSQL.exe" />
-      <option name="PROGRAM_PARAMETERS" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/BulkImportSQL/bin/Debug/net8.0" />
-      <option name="PASS_PARENT_ENVS" value="1" />
-      <option name="USE_EXTERNAL_CONSOLE" value="0" />
-      <option name="USE_MONO" value="0" />
-      <option name="RUNTIME_ARGUMENTS" value="" />
-      <option name="PROJECT_PATH" value="$PROJECT_DIR$/BulkImportSQL/BulkImportSQL.csproj" />
-      <option name="PROJECT_EXE_PATH_TRACKING" value="1" />
-      <option name="PROJECT_ARGUMENTS_TRACKING" value="1" />
-      <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="1" />
-      <option name="PROJECT_KIND" value="DotNetCore" />
-      <option name="PROJECT_TFM" value="net8.0" />
-      <method v="2">
-        <option name="Build" />
-      </method>
-    </configuration>
-  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -103,7 +81,7 @@
       <option name="presentableId" value="Default" />
       <updated>1707771444504</updated>
       <workItem from="1707771447550" duration="1993000" />
-      <workItem from="1707828207499" duration="7408000" />
+      <workItem from="1707828207499" duration="9893000" />
     </task>
     <task id="LOCAL-00001" summary="Add BulkImportSQL solution file&#10;&#10;This commit introduces a new Visual Studio solution file for the BulkImportSQL project in the codebase. This includes necessary configuration for Debug and Release modes on Any CPU platform.">
       <option name="closed" value="true" />
@@ -121,7 +99,63 @@
       <option name="project" value="LOCAL" />
       <updated>1707830183259</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Add BulkImportSQL project file&#10;&#10;This commit introduces a new BulkImportSQL.csproj file, setting up the project with .NET 8.0 framework, enabling implicit usings and nullability checks. It also adds package references for &quot;cclip.net&quot;, &quot;MySql.Data&quot;, and &quot;Newtonsoft.Json&quot;.">
+      <option name="closed" value="true" />
+      <created>1707846907056</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846907056</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Add ExitCodes enum in BulkImportSQL&#10;&#10;The new file, ExitCodes.cs, has been added to the BulkImportSQL directory. It defines an enum ExitCodes with the values Success, InvalidArguments, and UnhandledException for program exit codes.">
+      <option name="closed" value="true" />
+      <created>1707846917910</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846917910</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Add ArgumentFields struct to handle command-line arguments&#10;&#10;This new struct, ArgumentFields, handles the fields for the command-line arguments including server and database connection properties, credentials for authentication, and parameters related to the import process such as input file, table, columns, etc. This enhancement facilitates the management and readability of command-line arguments.">
+      <option name="closed" value="true" />
+      <created>1707846929150</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846929150</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Add CommandLine class for argument parsing&#10;&#10;This commit introduces the CommandLine class to handle command line argument parsing for the BulkImportSQL application. This class handles required and optional arguments, including input file, server, database, table, username, password, columns, element, batch size, number of processes, and JSON output. It also covers error handling for invalid or missing arguments.">
+      <option name="closed" value="true" />
+      <created>1707846941248</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846941248</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Add necessary workspace and project configuration files&#10;&#10;This commit introduces new workspace and project configuration files for the BulkImportSQL project. These configurations include settings for auto generated configurations, change list manager, vcs settings, etc. in .idea/. The introduction of these files ensures necessary project settings are properly set up for every developer working on the project.">
+      <option name="closed" value="true" />
+      <created>1707846954718</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846954718</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Add SQLManager class to BulkImportSQL&#10;&#10;A new file, SQLManager.cs, has been created within the BulkImportSQL/sql directory. This file includes the definition for the SQLManager class, which currently contains a method prototype for establishing a connection to the database server.">
+      <option name="closed" value="true" />
+      <created>1707846964543</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846964543</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Add new BulkImportSQL/Program.cs file&#10;&#10;A new Program.cs file has been added under the BulkImportSQL directory. This file currently contains an empty main method and will serve as the entry point for the application.">
+      <option name="closed" value="true" />
+      <created>1707846972177</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1707846972177</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -129,10 +163,18 @@
   </component>
   <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="Add BulkImportSQL solution file&#10;&#10;This commit introduces a new Visual Studio solution file for the BulkImportSQL project in the codebase. This includes necessary configuration for Debug and Release modes on Any CPU platform." />
     <MESSAGE value="Add .gitignore file&#10;&#10;This commit introduces a .gitignore file to the project in order to ignore unnecessary files and directories such as build outputs and IDE-specific files. As a result, these files and directories won't be tracked by Git, reducing unnecessary noise in the repository." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add .gitignore file&#10;&#10;This commit introduces a .gitignore file to the project in order to ignore unnecessary files and directories such as build outputs and IDE-specific files. As a result, these files and directories won't be tracked by Git, reducing unnecessary noise in the repository." />
+    <MESSAGE value="Add BulkImportSQL project file&#10;&#10;This commit introduces a new BulkImportSQL.csproj file, setting up the project with .NET 8.0 framework, enabling implicit usings and nullability checks. It also adds package references for &quot;cclip.net&quot;, &quot;MySql.Data&quot;, and &quot;Newtonsoft.Json&quot;." />
+    <MESSAGE value="Add ExitCodes enum in BulkImportSQL&#10;&#10;The new file, ExitCodes.cs, has been added to the BulkImportSQL directory. It defines an enum ExitCodes with the values Success, InvalidArguments, and UnhandledException for program exit codes." />
+    <MESSAGE value="Add ArgumentFields struct to handle command-line arguments&#10;&#10;This new struct, ArgumentFields, handles the fields for the command-line arguments including server and database connection properties, credentials for authentication, and parameters related to the import process such as input file, table, columns, etc. This enhancement facilitates the management and readability of command-line arguments." />
+    <MESSAGE value="Add CommandLine class for argument parsing&#10;&#10;This commit introduces the CommandLine class to handle command line argument parsing for the BulkImportSQL application. This class handles required and optional arguments, including input file, server, database, table, username, password, columns, element, batch size, number of processes, and JSON output. It also covers error handling for invalid or missing arguments." />
+    <MESSAGE value="Add necessary workspace and project configuration files&#10;&#10;This commit introduces new workspace and project configuration files for the BulkImportSQL project. These configurations include settings for auto generated configurations, change list manager, vcs settings, etc. in .idea/. The introduction of these files ensures necessary project settings are properly set up for every developer working on the project." />
+    <MESSAGE value="Add SQLManager class to BulkImportSQL&#10;&#10;A new file, SQLManager.cs, has been created within the BulkImportSQL/sql directory. This file includes the definition for the SQLManager class, which currently contains a method prototype for establishing a connection to the database server." />
+    <MESSAGE value="Add new BulkImportSQL/Program.cs file&#10;&#10;A new Program.cs file has been added under the BulkImportSQL directory. This file currently contains an empty main method and will serve as the entry point for the application." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add new BulkImportSQL/Program.cs file&#10;&#10;A new Program.cs file has been added under the BulkImportSQL directory. This file currently contains an empty main method and will serve as the entry point for the application." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
