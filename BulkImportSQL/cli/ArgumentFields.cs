@@ -38,7 +38,7 @@ public struct ArgumentFields()
     /// <summary>
     /// Represents the columns used in the import process.
     /// </summary>
-    public string[] Columns { get; set; } = [];
+    public string[]? Columns { get; set; } = null;
 
     /// <summary>
     /// Represents a property for storing the JSON element.
@@ -67,4 +67,9 @@ public struct ArgumentFields()
     /// This parameter is optional and can be null if not provided.
     /// </remarks>
     public string? JsonFile { get; set; } = null;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the operation should run silently.
+    /// </summary>
+    public bool Silent { get; set; } = false;
 }
