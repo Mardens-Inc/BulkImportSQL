@@ -1,11 +1,11 @@
-﻿namespace BulkImportSQL;
+﻿using BulkImportSQL.cli;
 
-using cclip;
+namespace BulkImportSQL;
 
-public class Program
+public static class Program
 {
-    public static void Main(string[] args)
+    public static void Main()
     {
-
+        ArgumentFields fields = CommandLine.Build();
     }
 }
