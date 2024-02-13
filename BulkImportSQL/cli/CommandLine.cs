@@ -32,6 +32,8 @@ public sealed class CommandLine
         _optionsManager.Add(new Option("j", "json", false, true, "To output the results in json format, specify this flag and a file name. Ex: -j results.json"));
         _optionsManager.Add(new Option("sm", "silent", false, false, "This mode will not print any output to the console, perfect for headless operations"));
         _optionsManager.Add(new Option("cp", "port", false, true, "The port to connect to the server. Default is 3306"));
+        _optionsManager.Add(new Option("tt", "test", false, false, "This mode will not insert any data into the database, perfect for testing the connection and parsing the input file"));
+        _optionsManager.Add(new Option("n", "empty", false, false, "This will empty the table before inserting data"));
     }
 
     /// <summary>
@@ -68,7 +70,9 @@ public sealed class CommandLine
                 JsonElement = GetJsonElement(parser, inputFile),
                 BatchSize = GetBatchSize(parser),
                 NumberOfProcesses = GetNumberOfProcesses(parser),
-                JsonFile = GetJsonOutputFile(parser)
+                JsonFile = GetJsonOutputFile(parser),
+                EmptyBeforeInsertion = parser.IsPresent("n"),
+                TestMode = parser.IsPresent("tt")
             };
         }
         // If any Argument Exception is encountered, display error message and exit with InvalidArguments code
@@ -131,7 +135,7 @@ public sealed class CommandLine
     /// </summary>
     /// <param name="parser">The OptionsParser object used for parsing command line options.</param>
     /// <returns>An array of strings representing the columns specified by the user. If no columns are specified, an empty array is returned.</returns>
-    private static string[]? GetColumns(OptionsParser parser) => parser.IsPresent("c", out string columns) ? columns.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+    private static string[]? GetColumns(OptionsParser parser) => parser.IsPresent("c", out string columns) ? Uri.UnescapeDataString(columns.Trim('"')).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 
     /// <summary>
     /// Gets the full path of the input file.
