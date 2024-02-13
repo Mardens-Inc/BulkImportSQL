@@ -30,6 +30,7 @@ public sealed class CommandLine
         _optionsManager.Add(new Option("b", "batch", false, true, "The batch size to import. Default is 1000"));
         _optionsManager.Add(new Option("ps", "processes", false, true, $"The number of processes to use. Default is {Environment.ProcessorCount}"));
         _optionsManager.Add(new Option("j", "json", false, true, "To output the results in json format, specify this flag and a file name. Ex: -j results.json"));
+        _optionsManager.Add(new Option("sm", "silent", false, false, "This mode will not print any output to the console, perfect for headless operations"));
     }
 
     /// <summary>
@@ -60,6 +61,7 @@ public sealed class CommandLine
                 Table = table,
                 Username = username,
                 Password = password,
+                Silent = parser.IsPresent("sm"),
                 Columns = GetColumns(parser),
                 JsonElement = GetJsonElement(parser, inputFile),
                 BatchSize = GetBatchSize(parser),
@@ -127,7 +129,7 @@ public sealed class CommandLine
     /// </summary>
     /// <param name="parser">The OptionsParser object used for parsing command line options.</param>
     /// <returns>An array of strings representing the columns specified by the user. If no columns are specified, an empty array is returned.</returns>
-    private static string[] GetColumns(OptionsParser parser) => parser.IsPresent("c", out string columns) ? columns.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : [];
+    private static string[]? GetColumns(OptionsParser parser) => parser.IsPresent("c", out string columns) ? columns.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 
     /// <summary>
     /// Gets the full path of the input file.
