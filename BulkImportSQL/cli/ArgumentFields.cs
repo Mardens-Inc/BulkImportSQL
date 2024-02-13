@@ -77,4 +77,17 @@ public struct ArgumentFields()
     /// Gets or sets a value indicating whether the operation should run silently.
     /// </summary>
     public bool Silent { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the table should be emptied before performing the insertion operation.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the table should be emptied before insertion; otherwise, <c>false</c>.
+    /// </value>
+    public bool EmptyBeforeInsertion { get; set; } = false;
+
+    /// <summary>
+    /// This mode will not insert any data into the database, perfect for testing the connection and parsing the input file.
+    /// </summary>
+    public bool TestMode { get; set; } = false;
 }
