@@ -1,0 +1,70 @@
+namespace BulkImportSQL.cli;
+
+/// <summary>
+/// Represents the fields for the command-line arguments.
+/// </summary>
+public struct ArgumentFields()
+{
+    /// <summary>
+    /// Represents the input file for bulk import.
+    /// </summary>
+    public string InputFile { get; set; } = "";
+
+    /// <summary>
+    /// Represents the server property used for connecting to a database server.
+    /// </summary>
+    public string Server { get; set; } = "";
+
+    /// <summary>
+    /// Represents a database connection and related properties.
+    /// </summary>
+    public string Database { get; set; } = "";
+
+    /// <summary>
+    /// Represents the properties for the table being imported.
+    /// </summary>
+    public string Table { get; set; } = "";
+
+    /// <summary>
+    /// Represents the username used for authentication.
+    /// </summary>
+    public string Username { get; set; } = "";
+
+    /// <summary>
+    /// Represents a password used for authentication.
+    /// </summary>
+    public string Password { get; set; } = "";
+
+    /// <summary>
+    /// Represents the columns used in the import process.
+    /// </summary>
+    public string[] Columns { get; set; } = [];
+
+    /// <summary>
+    /// Represents a property for storing the JSON element.
+    /// </summary>
+    public string JsonElement { get; set; } = "";
+
+    /// <summary>
+    /// Represents the batch size for bulk importing SQL data.
+    /// </summary>
+    public int BatchSize { get; set; } = 1000;
+
+    /// <summary>
+    /// Gets or sets the number of processes to use for importing data in parallel.
+    /// </summary>
+    /// <remarks>
+    /// The default value is the number of processors on the system.
+    /// </remarks>
+    public int NumberOfProcesses { get; set; } = Environment.ProcessorCount;
+
+    /// <summary>
+    /// Represents the optional JSON file parameter for the command line utility.
+    /// </summary>
+    /// <remarks>
+    /// The JSON file parameter allows the user to specify a file that contains additional JSON data to be imported into the database.
+    /// The JSON data should be in a format that matches the structure of the target table.
+    /// This parameter is optional and can be null if not provided.
+    /// </remarks>
+    public string? JsonFile { get; set; } = null;
+}
