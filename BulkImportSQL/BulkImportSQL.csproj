@@ -6,12 +6,22 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>BulkImportSQL</RootNamespace>
+        <Company>LFInteractive LLC.</Company>
+        <ProductName>Bulk Import SQL</ProductName>
+        <FileDescription>${Description}</FileDescription>
+        <Authors>Drew Chase</Authors>
+        <Description>Batch imports a large JSON file into a SQL Server database.</Description>
+        <Version>0.0.1</Version>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <FileVersion>0.0.0.1</FileVersion>
+        <Configurations>Debug;Release;bflat</Configurations>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="cclip.net" Version="0.0.1" />
-      <PackageReference Include="MySql.Data" Version="8.3.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="cclip.net" Version="0.0.1"/>
+        <PackageReference Include="MySql.Data" Version="8.3.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
 </Project>
