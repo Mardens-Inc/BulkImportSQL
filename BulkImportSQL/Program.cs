@@ -19,21 +19,35 @@ public static class Program
             Console.WriteLine($"Successfully connected to the server {fields.Server} with the database {fields.Database} using the username {fields.Username} and the password provided.");
             Console.ResetColor();
 
-            // Process the JSON data in the input file and insert it into the database, using the specified table and column names,
-            // and the configured batch size and degree of parallelism
-            BatchProcessResult result = manager.Process(
-                fields.Table,
-                fields.Columns,
-                fields.JsonElement,
-                fields.BatchSize,
-                fields.NumberOfProcesses,
-                JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : (sender, args) => { Progressbar.Draw(args.Processed, args.Total); });
+            if (!fields.TestMode)
+            {
+                // Process the JSON data in the input file and insert it into the database, using the specified table and column names,
+                // and the configured batch size and degree of parallelism
+                BatchProcessResult result = manager.Process(
+                    fields.Table,
+                    fields.Columns,
+                    fields.JsonElement,
+                    fields.BatchSize,
+                    fields.NumberOfProcesses,
+                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : (sender, args) => { Progressbar.Draw(args.Processed, args.Total); });
+            }
+            else
+            {
+                string result = manager.ExportInsertQueries(fields.Table, fields.Columns, fields.JsonElement, JArray.Parse(File.ReadAllText(fields.InputFile)));
+                var lines = result.Split('\n').Take(10);
+                Console.WriteLine(string.Join('\n', lines));
+                Console.WriteLine("...");
+                string outputFile = Path.GetFullPath($"./{fields.Table}.sql");
+                Console.WriteLine($"The rest have been written to '{outputFile}'");
+                File.WriteAllText(outputFile, result);
+            }
 
             // After all operations are complete, dispose the SQLManager to close the connection and free up system resources
             manager.Dispose();
         }
         else // If the connection attempt failed
         {
+            manager?.Dispose(); // Dispose of the SQLManager to close the connection and free up system resources
             // Print a colorful error message to the console
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine($"Unable to connect to the server with the connection string '{manager.ConnectionString}'.");
