@@ -3,6 +3,7 @@ using System.Text;
 using BulkImportSQL.cli;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
+using Timer = System.Timers.Timer;
 
 namespace BulkImportSQL.sql;
 
@@ -60,7 +61,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <param name="numberOfProcesses">The number of parallel processes to be used for inserting the data.</param>
     /// <param name="json">The JSON data to be inserted into the SQL server table.</param>
     /// <returns>A BatchProcessResult object containing the processing result.</returns>
-    public BatchProcessResult Process(string table, string[]? columns, string? element, int numberOfSequentialInserts, int numberOfProcesses, JArray json)
+    public BatchProcessResult Process(string table, string[]? columns, string? element, int numberOfSequentialInserts, int numberOfProcesses, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
     {
         // We start by declaring and starting a Stopwatch to keep track of processing times.
         Stopwatch stopwatch = Stopwatch.StartNew();
@@ -68,6 +69,17 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         // Two counters are declared for tracking insert operations.
         int inserted = 0;
         int failed = 0;
+
+        Timer? timer = null;
+        if (onUpdate is not null)
+        {
+            // If the onUpdate event is not null, a new Timer object is created to update the progress of the process.
+            timer = new Timer(TimeSpan.FromSeconds(1));
+            int total = json.Count; // The total number of JSON elements is stored in a variable.
+            // The Elapsed event is used to update the progress of the process.
+            timer.Elapsed += (sender, args) => onUpdate.Invoke(this, new ProcessUpdateEventArgs() { Total = total, Processed = inserted + failed });
+            timer.Start();
+        }
 
         // A check is performed to determine if parallel execution should be utilized, based on the number of JSON elements.
         if (json.Count > 1000)
@@ -134,6 +146,11 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
 
         // The stopwatch is stopped.
         stopwatch.Stop();
+        // The timer is stopped if it was created.
+        timer?.Stop();
+
+        // run the onUpdate event one last time to show the final result
+        onUpdate?.Invoke(this, new ProcessUpdateEventArgs() { Total = json.Count, Processed = inserted + failed });
 
         // A new BatchProcessResult object is created and returned.
         return new BatchProcessResult()
