@@ -1,6 +1,6 @@
 # BulkImportSQL Command Line Utility
 
-This Markdown documentation explains how to use the `BulkImportSQL` Command Line Utility. It is a handy utility designed for .NET applications, which lets you import JSON content into SQL databases.
+This explains how to use the `BulkImportSQL` Command Line Utility. It is a handy utility designed for .NET applications, which lets you import JSON content into SQL databases.
 
 This library allows handling command-line arguments with ease and supports both required and optional arguments.
 
