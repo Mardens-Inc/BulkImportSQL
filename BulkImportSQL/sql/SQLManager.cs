@@ -13,25 +13,12 @@ namespace BulkImportSQL.sql;
 public sealed class SqlManager : IDisposable, IAsyncDisposable
 {
     /// <summary>
-    /// Represents a SQL manager used for connecting to a SQL server and performing database operations.
+    /// Gets the connection string used to connect to the SQL server.
     /// </summary>
-    public string Server { get; }
-
-    /// <summary>
-    /// Represents a SQL manager used for connecting to a SQL server and performing database operations.
-    /// </summary>
-    public string Database { get; }
-
-    /// <summary>
-    /// Gets the username for authentication to the SQL server.
-    /// </summary>
-    /// <value>The username for authentication.</value>
-    public string Username { get; }
-
-    /// <summary>
-    /// Gets or sets the password used for authentication when connecting to a SQL server.
-    /// </summary>
-    public string Password { get; }
+    /// <value>
+    /// The connection string.
+    /// </value>
+    public string ConnectionString { get; }
 
     /// <summary>
     /// Represents a connection to a SQL server.
@@ -41,14 +28,11 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <summary>
     /// Represents a SQL manager used for connecting to a SQL server and performing database operations.
     /// </summary>
-    private SqlManager(string server, string database, string username, string password)
+    private SqlManager(string server, int port, string database, string username, string password)
     {
-        Server = server;
-        Database = database;
-        Username = username;
-        Password = password;
-
-        Connection = new MySqlConnection($"Server={Server};Database={Database};Uid={Username};Pwd={Password};");
+        ConnectionString = $"Server={server};Port={port};Database={database};Uid={username};Pwd={password};";
+        Connection = new MySqlConnection(ConnectionString);
+        Connection.Open();
     }
 
     /// <summary>
@@ -161,6 +145,62 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         };
     }
 
+    public string ExportInsertQueries(string table, string[]? columns, string? element, JArray json)
+    {
+        object lockObject = new();
+        // A StringBuilder object is created for building the SQL insert statement.
+        StringBuilder inserts = new();
+        // A check is performed to determine if parallel execution should be utilized, based on the number of JSON elements.
+        if (json.Count > 1000)
+        {
+            // For JSON collections larger than 1000, a parallel approach is used.
+            // Parallelism is limited by the numberOfProcesses parameter.
+            Parallel.ForEach(json.Children<JObject>(), new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount }, i =>
+            {
+                // For every JObject in the parallel loop.
+                JObject item = i;
+
+                // Check if an element parameter has been passed in. If so, attempt to get this JObject from the current JObject.
+                if (element is not null)
+                {
+                    // This operation might fail, as such it's wrapped in a try/catch block.
+                    JObject? j = i[element]?.Value<JObject>();
+
+                    // If the JObject retrieval operation failed, an exception is thrown.
+                    item = j ?? throw new ArgumentException("The element provided does not exist in the JSON object.");
+                }
+
+                // Inserts the SQL insert statement to the StringBuilder.
+                string query = BuildInsertQuery(table, columns, item);
+                lock (lockObject) // Prevents multiple threads from writing to the StringBuilder at the same time.
+                {
+                    inserts.AppendLine(query);
+                }
+            });
+        }
+        else
+        {
+            // For JSON collections 1000 or smaller, a sequential approach is used.
+            foreach (JObject i in json.Children<JObject>())
+            {
+                // This code is very similar to the parallel version above, but operates on a single thread.
+                JObject item = i;
+                if (element is not null)
+                {
+                    JObject? j = i[element]?.Value<JObject>();
+                    item = j ?? throw new ArgumentException("The element provided does not exist in the JSON object or is empty/null.");
+                }
+
+                // Inserts the SQL insert statement to the StringBuilder.
+                string query = BuildInsertQuery(table, columns, item);
+                inserts.AppendLine(query);
+            }
+        }
+
+        return inserts.ToString();
+    }
+
+
     private bool Insert(string sql)
     {
         // Starts a try block to catch exceptions related to MySQL operations
@@ -218,14 +258,15 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// Connects to the SQL server using the provided server, database, username, and password.
     /// </summary>
     /// <param name="server">The server name or IP address.</param>
+    /// <param name="port">The port number for the SQL server.</param>
     /// <param name="database">The name of the database.</param>
     /// <param name="username">The username for authentication.</param>
     /// <param name="password">The password for authentication.</param>
     /// <param name="manager">The instance of SqlManager used for the connection.</param>
     /// <returns>A boolean value indicating whether the connection is successfully established or not.</returns>
-    public static bool Connect(string server, string database, string username, string password, out SqlManager manager)
+    public static bool Connect(string server, int port, string database, string username, string password, out SqlManager manager)
     {
-        manager = new SqlManager(server, database, username, password);
+        manager = new SqlManager(server, port, database, username, password);
         return manager.Connection.State == System.Data.ConnectionState.Open;
     }
 
