@@ -24,4 +24,16 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="..\.gitignore">
+        <Link>.gitignore</Link>
+      </Content>
+      <Content Include="..\README.MD">
+        <Link>README.MD</Link>
+      </Content>
+      <Content Include="..\test.json">
+        <Link>test.json</Link>
+      </Content>
+    </ItemGroup>
+
 </Project>
