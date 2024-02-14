@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
@@ -55,10 +54,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         int failed = 0;
 
         // The SQL insert queries are built using the BuildInsertQueries method.
-        if (!BuildInsertQueries(table, columns, element, numberOfProcesses, json, out string[] queries, onUpdate))
-        {
-            throw new InvalidOperationException($"Failed to build insert queries for table '{table}'.");
-        }
+        string[] queries = BuildInsertQueries(table, columns, element, numberOfProcesses, json, onUpdate);
 
         Timer? timer = null;
         if (onUpdate is not null)
@@ -139,16 +135,14 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <param name="element">An optional JSON element to extract data from. If null, the entire JSON will be used.</param>
     /// <param name="numberOfProcesses">The number of parallel processes to perform when the JSON count exceeds 1000.</param>
     /// <param name="json">The JSON data to insert into the table.</param>
-    /// <param name="queries">Output parameter containing the built insert queries.</param>
     /// <param name="onUpdate">An optional event handler to receive progress updates during the query building process. The event args for this handler is <see cref="ProcessUpdateEventArgs"/>.</param>
     /// <returns>True if an error occurred during the query building process, false otherwise.</returns>
-    public static bool BuildInsertQueries(string table, string[]? columns, string? element, int numberOfProcesses, JArray json, out string[] queries, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
+    public static string[] BuildInsertQueries(string table, string[]? columns, string? element, int numberOfProcesses, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
     {
         // Initialize a ConcurrentBag instance to contain the queue.
-        ConcurrentBag<string> queue = [];
-
-        // Create a boolean to flag any errors.
-        bool hasError = false;
+        // ConcurrentBag<string> queue = [];
+        string[] queue = new string[json.Count];
+        int processed = 0;
 
         // Initialize a nullable Timer instance.
         Timer? timer = null;
@@ -163,58 +157,40 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             int total = json.Count;
 
             // Wire up the event of the Timer to call onUpdate during each tick.
-            timer.Elapsed += (_, _) => onUpdate.Invoke(null, new ProcessUpdateEventArgs() { Total = total, Processed = queue.Count, State = "Building" });
+            timer.Elapsed += (_, _) => onUpdate.Invoke(null, new ProcessUpdateEventArgs() { Total = total, Processed = processed, State = "Building" });
 
             // Start the timer.
             timer.Start();
         }
 
-        // Process the JSON objects in parallel if their count exceeds 1000.
-        if (json.Count > 1000)
+        for (int i = 0; i < queue.Length; i++)
         {
-            Parallel.ForEach(json.Children<JObject>(), new ParallelOptions() { MaxDegreeOfParallelism = numberOfProcesses }, Action);
-        }
-        else
-        {
-            // Process each JSON object in a sequential manner if there are less than or equal to 1000.
-            foreach (JObject i in json.Children<JObject>())
+            // Initialize a nullable JObject instance.
+            JObject? item = json[i].Value<JObject>();
+
+            // Try to retrieve value of the "element" from the JObject and perform operations if successful.
+            if (element is not null && item is not null && item.TryGetValue(element, out JToken? jToken))
             {
-                Action(i);
+                item = jToken as JObject;
             }
+
+            if (item is null)
+            {
+                processed++;
+                continue;
+            }
+
+
+            // Call BuildInsertQuery method with the necessary arguments and add the return string to queue.
+            queue[i] = BuildInsertQuery(table, columns, item);
+            processed++;
         }
 
         // Stop the timer after processing is complete.
         timer?.Stop();
 
-        // Update the queries with final queue.
-        queries = queue.ToArray();
-
         // Return the error flag.
-        return hasError;
-
-        // Define the Action method to process each JSON object.
-        void Action(JObject i)
-        {
-            // Initialize a nullable JObject instance.
-            JObject? item = i;
-
-            // Try to retrieve value of the "element" from the JObject and perform operations if successful.
-            if (element is not null && i.TryGetValue(element, out JToken? jToken))
-            {
-                item = jToken as JObject;
-
-                // Set error flag to true if item is null and return.
-                if (item == null)
-                {
-                    hasError = true;
-                    return;
-                }
-            }
-
-            // Call BuildInsertQuery method with the necessary arguments and add the return string to queue.
-            string query = BuildInsertQuery(table, columns, item);
-            queue.Add(query);
-        }
+        return queue;
     }
 
 
