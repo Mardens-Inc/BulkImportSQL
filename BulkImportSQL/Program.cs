@@ -30,9 +30,7 @@ public static class Program
                     fields.JsonElement,
                     fields.BatchSize,
                     fields.NumberOfProcesses,
-                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent
-                        ? null
-                        : OnUpdate);
+                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : OnUpdate);
                 Console.WriteLine("Done!");
 
                 if (fields.JsonFile is not null)
