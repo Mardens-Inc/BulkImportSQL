@@ -43,17 +43,7 @@ public static class Program
             }
             else
             {
-                if (!SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.NumberOfProcesses, fields.Json, out string[] result, OnUpdate))
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine($"An error occurred while building the insert queries.");
-                    Console.ResetColor();
-
-                    manager?.Dispose();
-                    Environment.Exit((byte)ExitCodes.UnhandledException);
-                    return;
-                }
-
+                string[] result = SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.NumberOfProcesses, fields.Json, OnUpdate);
                 var lines = result.Take(10);
                 Console.WriteLine(string.Join('\n', lines));
                 Console.WriteLine("...");
