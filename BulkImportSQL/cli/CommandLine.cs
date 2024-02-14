@@ -56,6 +56,7 @@ public sealed class CommandLine
         {
             // Parsing additional parameters and organize them into an ArgumentFields struct
             string inputFile = GetInputFile(parser);
+            JArray json = GetJson(inputFile);
             return new ArgumentFields()
             {
                 InputFile = inputFile,
@@ -63,11 +64,12 @@ public sealed class CommandLine
                 Port = GetConnectionPort(parser),
                 Database = database,
                 Table = table,
+                Json = json,
                 Username = username,
                 Password = password,
                 Silent = parser.IsPresent("sm"),
                 Columns = GetColumns(parser),
-                JsonElement = GetJsonElement(parser, inputFile),
+                JsonElement = GetJsonElement(parser, json),
                 BatchSize = GetBatchSize(parser),
                 NumberOfProcesses = GetNumberOfProcesses(parser),
                 JsonFile = GetJsonOutputFile(parser),
@@ -158,21 +160,37 @@ public sealed class CommandLine
     }
 
     /// <summary>
+    /// Parses a JSON file and returns the parsed JSON as a JArray object.
+    /// </summary>
+    /// <param name="input">The path of the JSON file to parse.</param>
+    /// <returns>A JArray object representing the parsed JSON.</returns>
+    private static JArray GetJson(string input)
+    {
+        try
+        {
+            return JArray.Parse(File.ReadAllText(input));
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"The input file is not a valid JSON file. {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Retrieves a JSON element from the input file based on the provided options parser.
     /// </summary>
     /// <param name="parser">The options parser containing the command line arguments.</param>
     /// <param name="input">The path to the input file.</param>
     /// <returns>The name of the JSON element.</returns>
-    private static string GetJsonElement(OptionsParser parser, string input)
+    private static string GetJsonElement(OptionsParser parser, JArray input)
     {
         // Checking if the 'e' option is present in the options parser
         if (!parser.IsPresent("e", out string element)) return "";
         // Parse the JSON in the input file
-        JArray json = JArray.Parse(File.ReadAllText(input));
-        if (json.Count == 0)
+        if (input.Count == 0)
             // Throw an exception if the JSON is empty
             throw new ArgumentException("The input file is empty.");
-        JToken first = json[0];
+        JToken first = input[0];
         if (first[element] is null)
             // Throw an exception if the JSON element does not exist in the JSON
             throw new ArgumentException($"The element '{element}' does not exist in the input file.");
