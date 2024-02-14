@@ -1,5 +1,6 @@
 ﻿using BulkImportSQL.cli;
 using BulkImportSQL.sql;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace BulkImportSQL;
@@ -29,17 +30,22 @@ public static class Program
                     fields.JsonElement,
                     fields.BatchSize,
                     fields.NumberOfProcesses,
-                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : (sender, args) => { Progressbar.Draw(args.Processed, args.Total); });
+                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : (_, args) => { Progressbar.Draw(args.Processed, args.Total); });
+
+                if (fields.JsonFile is not null)
+                {
+                    File.WriteAllText(fields.JsonFile, JsonConvert.SerializeObject(result, Formatting.Indented));
+                }
             }
             else
             {
-                string result = manager.ExportInsertQueries(fields.Table, fields.Columns, fields.JsonElement, JArray.Parse(File.ReadAllText(fields.InputFile)));
-                var lines = result.Split('\n').Take(10);
+                string[] result = SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.Json);
+                var lines = result.Take(10);
                 Console.WriteLine(string.Join('\n', lines));
                 Console.WriteLine("...");
                 string outputFile = Path.GetFullPath($"./{fields.Table}.sql");
+                File.WriteAllLines(outputFile, result);
                 Console.WriteLine($"The rest have been written to '{outputFile}'");
-                File.WriteAllText(outputFile, result);
             }
 
             // After all operations are complete, dispose the SQLManager to close the connection and free up system resources
@@ -50,7 +56,7 @@ public static class Program
             manager?.Dispose(); // Dispose of the SQLManager to close the connection and free up system resources
             // Print a colorful error message to the console
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"Unable to connect to the server with the connection string '{manager.ConnectionString}'.");
+            Console.Error.WriteLine($"Unable to connect to the server with the connection string '{manager?.ConnectionString}'.");
             Console.ResetColor();
 
             // Terminate the program with a non-zero exit code to indicate the failure
