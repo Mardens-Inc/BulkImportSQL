@@ -1,6 +1,5 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text;
-using BulkImportSQL.cli;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using Timer = System.Timers.Timer;
@@ -44,6 +43,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <param name="numberOfSequentialInserts">The number of sequential inserts to be performed per JSON object.</param>
     /// <param name="numberOfProcesses">The number of parallel processes to be used for inserting the data.</param>
     /// <param name="json">The JSON data to be inserted into the SQL server table.</param>
+    /// <param name="onUpdate">An optional event handler to receive updates on the process.</param>
     /// <returns>A BatchProcessResult object containing the processing result.</returns>
     public BatchProcessResult Process(string table, string[]? columns, string? element, int numberOfSequentialInserts, int numberOfProcesses, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
     {
@@ -54,6 +54,12 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         int inserted = 0;
         int failed = 0;
 
+        // The SQL insert queries are built using the BuildInsertQueries method.
+        if (!BuildInsertQueries(table, columns, element, numberOfProcesses, json, out string[] queries, onUpdate))
+        {
+            throw new InvalidOperationException($"Failed to build insert queries for table '{table}'.");
+        }
+
         Timer? timer = null;
         if (onUpdate is not null)
         {
@@ -61,72 +67,32 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             timer = new Timer(TimeSpan.FromSeconds(1));
             int total = json.Count; // The total number of JSON elements is stored in a variable.
             // The Elapsed event is used to update the progress of the process.
-            timer.Elapsed += (sender, args) => onUpdate.Invoke(this, new ProcessUpdateEventArgs() { Total = total, Processed = inserted + failed });
+            timer.Elapsed += (_, _) => onUpdate.Invoke(this, new ProcessUpdateEventArgs() { Total = total, Processed = inserted + failed, State = "Insertion" });
             timer.Start();
         }
 
-        // A check is performed to determine if parallel execution should be utilized, based on the number of JSON elements.
-        if (json.Count > 1000)
+
+        // The BifurcateInsertQueries method is called to split the array of SQL insert queries into smaller chunks.
+        int chunks = BifurcateInsertQueries(numberOfSequentialInserts, ref queries);
+        if (chunks == 0)
         {
-            // For JSON collections larger than 1000, a parallel approach is used.
-            // Parallelism is limited by the numberOfProcesses parameter.
-            Parallel.ForEach(json.Children<JObject>(), new ParallelOptions() { MaxDegreeOfParallelism = numberOfProcesses }, i =>
-            {
-                // For every JObject in the parallel loop.
-                JObject item = i;
-
-                // Check if an element parameter has been passed in. If so, attempt to get this JObject from the current JObject.
-                if (element is not null)
-                {
-                    // This operation might fail, as such it's wrapped in a try/catch block.
-                    JObject? j = i[element]?.Value<JObject>();
-
-                    // If the JObject retrieval operation failed, an exception is thrown.
-                    item = j ?? throw new ArgumentException("The element provided does not exist in the JSON object.");
-                }
-
-                // A StringBuilder object is created for building the SQL insert statement.
-                StringBuilder sequentialInserts = new();
-
-                // For each iteration specified in the numberOfSequentialInserts parameter, append an SQL insert statement to the StringBuilder.
-                for (int k = 0; k < numberOfSequentialInserts; k++)
-                {
-                    sequentialInserts.Append(BuildInsertQuery(table, columns, item));
-                }
-
-                // Attempt to execute the SQL insert statement. Success or failure increments the corresponding counter.
-                if (Insert(sequentialInserts.ToString()))
-                    Interlocked.Add(ref inserted, inserted + numberOfSequentialInserts);
-                else
-                    Interlocked.Add(ref failed, failed + numberOfSequentialInserts);
-            });
+            throw new InvalidOperationException("No queries were generated.");
         }
-        else
+
+        Parallel.ForEach(queries, new ParallelOptions() { MaxDegreeOfParallelism = numberOfProcesses }, query =>
         {
-            // For JSON collections 1000 or smaller, a sequential approach is used.
-            foreach (JObject i in json.Children<JObject>())
+            // For each query in the queries array, the Insert method is called to execute the SQL insert statement.
+            if (Insert(query))
             {
-                // This code is very similar to the parallel version above, but operates on a single thread.
-                JObject item = i;
-                if (element is not null)
-                {
-                    JObject? j = i[element]?.Value<JObject>();
-                    item = j ?? throw new ArgumentException("The element provided does not exist in the JSON object or is empty/null.");
-                }
-
-                StringBuilder sequentialInserts = new();
-                for (int k = 0; k < numberOfSequentialInserts; k++)
-                {
-                    sequentialInserts.Append(BuildInsertQuery(table, columns, item));
-                }
-
-                // Same as above, success or failure increments the corresponding counter. But this time no need for Interlocked as this is thread safe.
-                if (Insert(sequentialInserts.ToString()))
-                    inserted += numberOfSequentialInserts;
-                else
-                    failed += numberOfSequentialInserts;
+                // If the insert operation is successful, the inserted counter is incremented.
+                Interlocked.Increment(ref inserted);
             }
-        }
+            else
+            {
+                // If the insert operation fails, the failed counter is incremented.
+                Interlocked.Increment(ref failed);
+            }
+        });
 
         // The stopwatch is stopped.
         stopwatch.Stop();
@@ -134,7 +100,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         timer?.Stop();
 
         // run the onUpdate event one last time to show the final result
-        onUpdate?.Invoke(this, new ProcessUpdateEventArgs() { Total = json.Count, Processed = inserted + failed });
+        onUpdate?.Invoke(this, new ProcessUpdateEventArgs() { Total = json.Count, Processed = inserted + failed, State = "Insertion" });
 
         // A new BatchProcessResult object is created and returned.
         return new BatchProcessResult()
@@ -145,59 +111,110 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         };
     }
 
-    public string ExportInsertQueries(string table, string[]? columns, string? element, JArray json)
+    /// <summary>
+    /// Splits the array of SQL insert queries into smaller chunks based on the specified chunk size.
+    /// </summary>
+    /// <param name="chunkSize">The number of insert queries to be included in each chunk.</param>
+    /// <param name="queries">The array of SQL insert queries to be split into chunks. This array will be modified to store the split chunks.</param>
+    /// <returns>The number of chunks generated from the input array of SQL insert queries.</returns>
+    private static int BifurcateInsertQueries(int chunkSize, ref string[] queries)
     {
-        object lockObject = new();
-        // A StringBuilder object is created for building the SQL insert statement.
-        StringBuilder inserts = new();
-        // A check is performed to determine if parallel execution should be utilized, based on the number of JSON elements.
+        List<string> tmp = [];
+
+        for (int i = 0; i < queries.Length; i += chunkSize)
+        {
+            tmp.Add(string.Join('\n', queries.Skip(i).Take(chunkSize)));
+        }
+
+        queries = [..tmp];
+
+        return tmp.Count;
+    }
+
+    /// <summary>
+    /// Builds insert queries for a given table and JSON data.
+    /// </summary>
+    /// <param name="table">The name of the table to insert data into.</param>
+    /// <param name="columns">An optional array of column names to insert data into. If null, all columns will be used.</param>
+    /// <param name="element">An optional JSON element to extract data from. If null, the entire JSON will be used.</param>
+    /// <param name="numberOfProcesses">The number of parallel processes to perform when the JSON count exceeds 1000.</param>
+    /// <param name="json">The JSON data to insert into the table.</param>
+    /// <param name="queries">Output parameter containing the built insert queries.</param>
+    /// <param name="onUpdate">An optional event handler to receive progress updates during the query building process. The event args for this handler is <see cref="ProcessUpdateEventArgs"/>.</param>
+    /// <returns>True if an error occurred during the query building process, false otherwise.</returns>
+    public static bool BuildInsertQueries(string table, string[]? columns, string? element, int numberOfProcesses, JArray json, out string[] queries, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
+    {
+        // Initialize a ConcurrentBag instance to contain the queue.
+        ConcurrentBag<string> queue = [];
+
+        // Create a boolean to flag any errors.
+        bool hasError = false;
+
+        // Initialize a nullable Timer instance.
+        Timer? timer = null;
+
+        // Check if an update is available.
+        if (onUpdate is not null)
+        {
+            // Set the Timer instance to tick every second.
+            timer = new Timer(TimeSpan.FromSeconds(1));
+
+            // Get the total count of the JSON object.
+            int total = json.Count;
+
+            // Wire up the event of the Timer to call onUpdate during each tick.
+            timer.Elapsed += (_, _) => onUpdate.Invoke(null, new ProcessUpdateEventArgs() { Total = total, Processed = queue.Count, State = "Building" });
+
+            // Start the timer.
+            timer.Start();
+        }
+
+        // Process the JSON objects in parallel if their count exceeds 1000.
         if (json.Count > 1000)
         {
-            // For JSON collections larger than 1000, a parallel approach is used.
-            // Parallelism is limited by the numberOfProcesses parameter.
-            Parallel.ForEach(json.Children<JObject>(), new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount }, i =>
-            {
-                // For every JObject in the parallel loop.
-                JObject item = i;
-
-                // Check if an element parameter has been passed in. If so, attempt to get this JObject from the current JObject.
-                if (element is not null)
-                {
-                    // This operation might fail, as such it's wrapped in a try/catch block.
-                    JObject? j = i[element]?.Value<JObject>();
-
-                    // If the JObject retrieval operation failed, an exception is thrown.
-                    item = j ?? throw new ArgumentException("The element provided does not exist in the JSON object.");
-                }
-
-                // Inserts the SQL insert statement to the StringBuilder.
-                string query = BuildInsertQuery(table, columns, item);
-                lock (lockObject) // Prevents multiple threads from writing to the StringBuilder at the same time.
-                {
-                    inserts.AppendLine(query);
-                }
-            });
+            Parallel.ForEach(json.Children<JObject>(), new ParallelOptions() { MaxDegreeOfParallelism = numberOfProcesses }, Action);
         }
         else
         {
-            // For JSON collections 1000 or smaller, a sequential approach is used.
+            // Process each JSON object in a sequential manner if there are less than or equal to 1000.
             foreach (JObject i in json.Children<JObject>())
             {
-                // This code is very similar to the parallel version above, but operates on a single thread.
-                JObject item = i;
-                if (element is not null)
-                {
-                    JObject? j = i[element]?.Value<JObject>();
-                    item = j ?? throw new ArgumentException("The element provided does not exist in the JSON object or is empty/null.");
-                }
-
-                // Inserts the SQL insert statement to the StringBuilder.
-                string query = BuildInsertQuery(table, columns, item);
-                inserts.AppendLine(query);
+                Action(i);
             }
         }
 
-        return inserts.ToString();
+        // Stop the timer after processing is complete.
+        timer?.Stop();
+
+        // Update the queries with final queue.
+        queries = queue.ToArray();
+
+        // Return the error flag.
+        return hasError;
+
+        // Define the Action method to process each JSON object.
+        void Action(JObject i)
+        {
+            // Initialize a nullable JObject instance.
+            JObject? item = i;
+
+            // Try to retrieve value of the "element" from the JObject and perform operations if successful.
+            if (element is not null && i.TryGetValue(element, out JToken? jToken))
+            {
+                item = jToken as JObject;
+
+                // Set error flag to true if item is null and return.
+                if (item == null)
+                {
+                    hasError = true;
+                    return;
+                }
+            }
+
+            // Call BuildInsertQuery method with the necessary arguments and add the return string to queue.
+            string query = BuildInsertQuery(table, columns, item);
+            queue.Add(query);
+        }
     }
 
 
@@ -241,10 +258,25 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             columns = item.Properties().Select(p => p.Name).ToArray();
 
         // For each column, select the corresponding value from the JSON object 'item'
-        string[] values = columns.Select(c => item[c]!.ToString()).ToArray();
+        string[] values = columns.Select(c => item[c]?.ToString() ?? "").ToArray();
 
         // Join the column names into a comma-separated string
         string columnString = string.Join(", ", columns);
+
+        // prepare the columns for the SQL query
+        for (int i = 0; i < columns.Length; i++)
+        {
+            // If the column is a string, wrap it in backticks
+            columns[i] = $"`{columns[i]}`";
+        }
+
+        // prepare the values for the SQL query
+        for (int i = 0; i < values.Length; i++)
+        {
+            // If the value is a string, escape single quotes and wrap it in single quotes
+            values[i] = $"'{values[i].Replace("'", "''")}'";
+        }
+
 
         // Join the values into a comma-separated string
         string valueString = string.Join(", ", values);
