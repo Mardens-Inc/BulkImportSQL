@@ -30,7 +30,16 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     {
         ConnectionString = $"Server={server};Port={port};Database={database};Uid={username};Pwd={password};";
         Connection = new MySqlConnection(ConnectionString);
-        Connection.Open();
+        try
+        {
+            Connection.Open();
+        }
+        catch (MySqlException e)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"Failed to connect to server: {e.Message}", e.StackTrace);
+            Console.ResetColor();
+        }
     }
 
     /// <summary>
@@ -234,25 +243,10 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             columns = item.Properties().Select(p => p.Name).ToArray();
 
         // For each column, select the corresponding value from the JSON object 'item'
-        string[] values = columns.Select(c => item[c]?.ToString() ?? "").ToArray();
+        string[] values = columns.Select(c => $"'{item[c]}'").ToArray();
 
         // Join the column names into a comma-separated string
-        string columnString = string.Join(", ", columns);
-
-        // prepare the columns for the SQL query
-        for (int i = 0; i < columns.Length; i++)
-        {
-            // If the column is a string, wrap it in backticks
-            columns[i] = $"`{columns[i]}`";
-        }
-
-        // prepare the values for the SQL query
-        for (int i = 0; i < values.Length; i++)
-        {
-            // If the value is a string, escape single quotes and wrap it in single quotes
-            values[i] = $"'{values[i].Replace("'", "''")}'";
-        }
-
+        string columnString = $"`{string.Join("`, `", columns)}`";
 
         // Join the values into a comma-separated string
         string valueString = string.Join(", ", values);
