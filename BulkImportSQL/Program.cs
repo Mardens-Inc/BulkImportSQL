@@ -30,16 +30,30 @@ public static class Program
                     fields.JsonElement,
                     fields.BatchSize,
                     fields.NumberOfProcesses,
-                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : (_, args) => { Progressbar.Draw(args.Processed, args.Total); });
+                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent
+                        ? null
+                        : OnUpdate);
+                Console.WriteLine("Done!");
 
                 if (fields.JsonFile is not null)
                 {
+                    Console.WriteLine($"Writing the result to '{fields.JsonFile}'");
                     File.WriteAllText(fields.JsonFile, JsonConvert.SerializeObject(result, Formatting.Indented));
                 }
             }
             else
             {
-                string[] result = SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.Json);
+                if (!SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.NumberOfProcesses, fields.Json, out string[] result, OnUpdate))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine($"An error occurred while building the insert queries.");
+                    Console.ResetColor();
+
+                    manager?.Dispose();
+                    Environment.Exit((byte)ExitCodes.UnhandledException);
+                    return;
+                }
+
                 var lines = result.Take(10);
                 Console.WriteLine(string.Join('\n', lines));
                 Console.WriteLine("...");
@@ -62,5 +76,21 @@ public static class Program
             // Terminate the program with a non-zero exit code to indicate the failure
             Environment.Exit((byte)ExitCodes.InvalidArguments);
         }
+    }
+
+    /// <summary>
+    /// Event handler for update progress during bulk import process.
+    /// </summary>
+    /// <param name="sender">The object that triggered the event.</param>
+    /// <param name="e">The event arguments.</param>
+    private static void OnUpdate(object? sender, ProcessUpdateEventArgs e)
+    {
+        Console.CursorVisible = false;
+        // clear the current line
+        Console.CursorLeft = 0;
+        Console.Write(new string(' ', Console.WindowWidth - 1));
+        Console.CursorLeft = 0;
+        Console.WriteLine($"{e.State}: Processed {e.Processed} of {e.Total} records ({e.Percentage:P2})");
+        Console.CursorTop -= 1;
     }
 }
