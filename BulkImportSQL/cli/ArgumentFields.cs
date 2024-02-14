@@ -1,3 +1,5 @@
+using Newtonsoft.Json.Linq;
+
 namespace BulkImportSQL.cli;
 
 /// <summary>
@@ -72,6 +74,14 @@ public struct ArgumentFields()
     /// This parameter is optional and can be null if not provided.
     /// </remarks>
     public string? JsonFile { get; set; } = null;
+
+    /// <summary>
+    /// Represents the JSON property of ArgumentFields.
+    /// </summary>
+    /// <remarks>
+    /// This property holds the JSON data to be processed by the application.
+    /// </remarks>
+    public JArray Json { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the operation should run silently.
