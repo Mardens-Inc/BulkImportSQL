@@ -168,6 +168,8 @@ public sealed class CommandLine
     {
         try
         {
+            Console.WriteLine($"Reading JSON from {input}");
+            Console.WriteLine("This might take a while depending on the size of the file.");
             return JArray.Parse(File.ReadAllText(input));
         }
         catch (Exception ex)
