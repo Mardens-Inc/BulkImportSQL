@@ -28,7 +28,6 @@ public sealed class CommandLine
         _optionsManager.Add(new Option("c", "columns", false, true, "The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma. Make sure to url encode this argument. Ex: column1,column2,column3%20with%20spaces"));
         _optionsManager.Add(new Option("e", "element", false, true, "If the input json has a sub element, specify the element to import. Ex: [{\"import_data\":{\"column1\":1,\"column2\":2}}] vs [{\"column1\":1,\"column2\":2}]"));
         _optionsManager.Add(new Option("b", "batch", false, true, "The batch size to import. Default is 1000"));
-        _optionsManager.Add(new Option("ps", "processes", false, true, $"The number of processes to use. Default is {Environment.ProcessorCount}"));
         _optionsManager.Add(new Option("j", "json", false, true, "To output the results in json format, specify this flag and a file name. Ex: -j results.json"));
         _optionsManager.Add(new Option("sm", "silent", false, false, "This mode will not print any output to the console, perfect for headless operations"));
         _optionsManager.Add(new Option("cp", "port", false, true, "The port to connect to the server. Default is 3306"));
@@ -55,6 +54,8 @@ public sealed class CommandLine
         try
         {
             // Parsing additional parameters and organize them into an ArgumentFields struct
+            bool silent = parser.IsPresent("sm");
+            if (silent) Console.SetOut(TextWriter.Null);
             string inputFile = GetInputFile(parser);
             JArray json = GetJson(inputFile);
             return new ArgumentFields()
@@ -67,11 +68,10 @@ public sealed class CommandLine
                 Json = json,
                 Username = username,
                 Password = password,
-                Silent = parser.IsPresent("sm"),
+                Silent = silent,
                 Columns = GetColumns(parser),
                 JsonElement = GetJsonElement(parser, json),
                 BatchSize = GetBatchSize(parser),
-                NumberOfProcesses = GetNumberOfProcesses(parser),
                 JsonFile = GetJsonOutputFile(parser),
                 EmptyBeforeInsertion = parser.IsPresent("n"),
                 TestMode = parser.IsPresent("tt")
@@ -99,18 +99,6 @@ public sealed class CommandLine
         return new ArgumentFields();
     }
 
-
-    // This method returns the number of processes needed for the application.
-    private static int GetNumberOfProcesses(OptionsParser parser)
-    {
-        // Checking if the 'ps' option is present in the options parser
-        if (!parser.IsPresent("ps", out string ps)) return Environment.ProcessorCount;
-        // If present, try to convert the value of 'ps' to an integer
-        if (int.TryParse(ps.Trim(), out int processes))
-            return processes;
-        // If 'ps' is not an integer, throw an exception
-        throw new ArgumentException($"The number of processes must be an integer. {ps} is not an integer.");
-    }
 
     private static string? GetJsonOutputFile(OptionsParser parser)
     {
