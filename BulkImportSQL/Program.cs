@@ -1,4 +1,5 @@
-﻿using BulkImportSQL.cli;
+﻿using System.Diagnostics;
+using BulkImportSQL.cli;
 using BulkImportSQL.sql;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -9,8 +10,18 @@ public static class Program
 {
     public static void Main()
     {
+        Stopwatch watch = Stopwatch.StartNew();
+
+
         // Construct the command-line arguments for our program
         ArgumentFields fields = CommandLine.Build();
+
+
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            watch.Stop();
+            Console.WriteLine($"Processed {fields.Json.Count} items in {watch.Elapsed}");
+        };
 
         // Try to establish a connection to the SQL server using the provided server details and user credentials
         if (SqlManager.Connect(fields.Server, fields.Port, fields.Database, fields.Username, fields.Password, out SqlManager manager))
@@ -22,6 +33,11 @@ public static class Program
 
             if (!fields.TestMode)
             {
+                if (fields.EmptyBeforeInsertion)
+                {
+                    manager.EmptyTable(fields.Table);
+                }
+
                 // Process the JSON data in the input file and insert it into the database, using the specified table and column names,
                 // and the configured batch size and degree of parallelism
                 BatchProcessResult result = manager.Process(
@@ -29,8 +45,8 @@ public static class Program
                     fields.Columns,
                     fields.JsonElement,
                     fields.BatchSize,
-                    fields.NumberOfProcesses,
                     JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : OnUpdate);
+
                 Console.WriteLine("Done!");
 
                 if (fields.JsonFile is not null)
@@ -41,8 +57,9 @@ public static class Program
             }
             else
             {
-                string[] result = SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.NumberOfProcesses, fields.Json, OnUpdate);
+                string[] result = SqlManager.BuildInsertQueries(fields.Table, fields.Columns, fields.JsonElement, fields.Json, OnUpdate);
                 var lines = result.Take(10);
+
                 Console.WriteLine(string.Join('\n', lines));
                 Console.WriteLine("...");
                 string outputFile = Path.GetFullPath($"./{fields.Table}.sql");
@@ -78,7 +95,7 @@ public static class Program
         Console.CursorLeft = 0;
         Console.Write(new string(' ', Console.WindowWidth - 1));
         Console.CursorLeft = 0;
-        Console.WriteLine($"{e.State}: Processed {e.Processed} of {e.Total} records ({e.Percentage:P2})");
+        Console.WriteLine($"{e.State}: Processed {e.Processed} and {e.Failed} failed of {e.Total} records ({e.Percentage:P2})");
         Console.CursorTop -= 1;
     }
 }
