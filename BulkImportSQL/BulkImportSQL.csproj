@@ -31,9 +31,6 @@
       <Content Include="..\README.MD">
         <Link>README.MD</Link>
       </Content>
-      <Content Include="..\test.json">
-        <Link>test.json</Link>
-      </Content>
     </ItemGroup>
 
 </Project>
