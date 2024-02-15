@@ -42,7 +42,6 @@ In addition to the required arguments, the tool provides some optional ones. Her
 | -c    | --columns   | The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma.  |
 | -e    | --element   | If the input json has a sub element, specify the element to import.                                                 |
 | -b    | --batch     | The batch size to import. Default is 1000                                                                           |
-| -ps   | --processes | The number of processes to use. Default is the available processors count                                           |
 | -j    | --json      | To output the results in json format, specify this flag and a file name. Ex: -j results.json                        |
 | -sm   | --silent    | This mode will not print any output to the console, perfect for headless operations                                 |
 | -cp   | --port      | The port to connect to the server. Default is 3306                                                                  |
@@ -56,7 +55,7 @@ In addition to the required arguments, the tool provides some optional ones. Her
 Here is an example of a command line syntax using these options:
 
 ```bash
-BulkImportSQL -i input.json -s myserver -d mydatabase -t mytable -u myuser -p mypassword -c column1,column2 -e myelement -b 2000 -ps 4 -j output.js -sm -cp 3306 -tt
+BulkImportSQL -i input.json -s myserver -d mydatabase -t mytable -u myuser -p mypassword -c column1,column2 -e myelement -b 2000 -j output.js -sm -cp 3306 -tt
 ```
 
 ## Handling Errors
