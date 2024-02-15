@@ -53,7 +53,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <param name="json">The JSON data to be inserted into the SQL server table.</param>
     /// <param name="onUpdate">An optional event handler to receive updates on the process.</param>
     /// <returns>A BatchProcessResult object containing the processing result.</returns>
-    public BatchProcessResult Process(string table, string[]? columns, string? element, int numberOfSequentialInserts, int numberOfProcesses, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
+    public BatchProcessResult Process(string table, string[]? columns, string? element, int numberOfSequentialInserts, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
     {
         // We start by declaring and starting a Stopwatch to keep track of processing times.
         Stopwatch stopwatch = Stopwatch.StartNew();
@@ -63,7 +63,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         int failed = 0;
 
         // The SQL insert queries are built using the BuildInsertQueries method.
-        string[] queries = BuildInsertQueries(table, columns, element, numberOfProcesses, json, onUpdate);
+        string[] queries = BuildInsertQueries(table, columns, element, json, onUpdate);
 
         Timer? timer = null;
         if (onUpdate is not null)
@@ -72,7 +72,7 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             timer = new Timer(TimeSpan.FromSeconds(1));
             int total = json.Count; // The total number of JSON elements is stored in a variable.
             // The Elapsed event is used to update the progress of the process.
-            timer.Elapsed += (_, _) => onUpdate.Invoke(this, new ProcessUpdateEventArgs() { Total = total, Processed = inserted + failed, State = "Insertion" });
+            timer.Elapsed += (_, _) => onUpdate.Invoke(this, new ProcessUpdateEventArgs() { Total = total, Processed = inserted, Failed = failed, State = "Insertion" });
             timer.Start();
         }
 
@@ -84,20 +84,14 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             throw new InvalidOperationException("No queries were generated.");
         }
 
-        Parallel.ForEach(queries, new ParallelOptions() { MaxDegreeOfParallelism = numberOfProcesses }, query =>
+        // The queries are inserted into the SQL server table using the Insert method.
+        foreach (string query in queries)
         {
-            // For each query in the queries array, the Insert method is called to execute the SQL insert statement.
-            if (Insert(query))
-            {
-                // If the insert operation is successful, the inserted counter is incremented.
-                Interlocked.Increment(ref inserted);
-            }
-            else
-            {
-                // If the insert operation fails, the failed counter is incremented.
-                Interlocked.Increment(ref failed);
-            }
-        });
+            int size = query.Split('\n').Length;
+            int failedToInsert = Insert(query);
+            inserted += size - failedToInsert;
+            failed += failedToInsert;
+        }
 
         // The stopwatch is stopped.
         stopwatch.Stop();
@@ -142,11 +136,10 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <param name="table">The name of the table to insert data into.</param>
     /// <param name="columns">An optional array of column names to insert data into. If null, all columns will be used.</param>
     /// <param name="element">An optional JSON element to extract data from. If null, the entire JSON will be used.</param>
-    /// <param name="numberOfProcesses">The number of parallel processes to perform when the JSON count exceeds 1000.</param>
     /// <param name="json">The JSON data to insert into the table.</param>
     /// <param name="onUpdate">An optional event handler to receive progress updates during the query building process. The event args for this handler is <see cref="ProcessUpdateEventArgs"/>.</param>
     /// <returns>True if an error occurred during the query building process, false otherwise.</returns>
-    public static string[] BuildInsertQueries(string table, string[]? columns, string? element, int numberOfProcesses, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
+    public static string[] BuildInsertQueries(string table, string[]? columns, string? element, JArray json, EventHandler<ProcessUpdateEventArgs>? onUpdate = null)
     {
         // Initialize a ConcurrentBag instance to contain the queue.
         // ConcurrentBag<string> queue = [];
@@ -202,10 +195,25 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
         return queue;
     }
 
+    /// <summary>
+    /// Empties the specified database table.
+    /// </summary>
+    /// <param name="table">The name of the table to empty.</param>
+    public void EmptyTable(string table)
+    {
+        // Build the SQL query to truncate the table.
+        string sql = $"TRUNCATE TABLE {table};";
 
-    private bool Insert(string sql)
+        // Execute the SQL query.
+        using MySqlCommand command = new MySqlCommand(sql, Connection);
+        command.ExecuteNonQuery();
+    }
+
+
+    private int Insert(string sql)
     {
         // Starts a try block to catch exceptions related to MySQL operations
+        int possibleItems = sql.Split('\n').Length;
         try
         {
             // 1. Declares a new MySqlCommand object with SQL query string and MySQL connection and initializes it
@@ -215,16 +223,20 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
 
             // Executes a SQL statement or stored procedure and returns the number of affected rows.
             // If the command is a SELECT statement, it returns -1. For all other types of SQL statements, the method returns the number of rows affected.
-            command.ExecuteNonQuery();
+            int affectedRows = command.ExecuteNonQuery();
 
             // If the SQL command executed successfully, return true.
-            return true;
+            return possibleItems - affectedRows;
         }
         // Captures MySqlException which is thrown when MySQL Server returns a warning or error.
-        catch (MySqlException)
+        catch (MySqlException e)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"Unable to insert data into the table: {e.Message}", e.StackTrace);
+            Console.WriteLine();
+            Console.ResetColor();
             // If MySqlException is caught, means there was an error in executing the SQL command, return false.
-            return false;
+            return possibleItems;
         }
     }
 
@@ -243,13 +255,15 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
             columns = item.Properties().Select(p => p.Name).ToArray();
 
         // For each column, select the corresponding value from the JSON object 'item'
-        string[] values = columns.Select(c => $"'{item[c]}'").ToArray();
+        string[] values = columns.Select(c => $"'{item[c]?.ToString().Replace(@"\", @"\\").Replace("'", @"\'").Replace("\"", "\\\"")}'").ToArray();
 
         // Join the column names into a comma-separated string
         string columnString = $"`{string.Join("`, `", columns)}`";
 
         // Join the values into a comma-separated string
         string valueString = string.Join(", ", values);
+
+        // escape invalid characters in the values
 
         // Build and return the SQL INSERT INTO statement
         return $"INSERT INTO {table} ({columnString}) VALUES ({valueString});";
