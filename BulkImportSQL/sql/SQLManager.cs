@@ -49,7 +49,6 @@ public sealed class SqlManager : IDisposable, IAsyncDisposable
     /// <param name="columns">An optional array of column names to be inserted. If null, all columns will be inserted.</param>
     /// <param name="element">An optional element within each JSON object to be inserted. If null, the entire object will be inserted.</param>
     /// <param name="numberOfSequentialInserts">The number of sequential inserts to be performed per JSON object.</param>
-    /// <param name="numberOfProcesses">The number of parallel processes to be used for inserting the data.</param>
     /// <param name="json">The JSON data to be inserted into the SQL server table.</param>
     /// <param name="onUpdate">An optional event handler to receive updates on the process.</param>
     /// <returns>A BatchProcessResult object containing the processing result.</returns>
