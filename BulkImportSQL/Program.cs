@@ -16,12 +16,19 @@ public static class Program
         // Construct the command-line arguments for our program
         ArgumentFields fields = CommandLine.Build();
 
+        // Get json from filemaker
+        JArray json = Filemaker.Filemaker.GetRows(fields.FilemakerUsername, fields.FilemakerPassword, fields.FilemakerDatabase, fields.FilemakerLayout).Result;
+        fields.Json = json;
+        fields.JsonElement = "fieldData";
+
 
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             watch.Stop();
             Console.WriteLine($"Processed {fields.Json.Count} items in {watch.Elapsed}");
         };
+
+
 
         // Try to establish a connection to the SQL server using the provided server details and user credentials
         if (SqlManager.Connect(fields.Server, fields.Port, fields.Database, fields.Username, fields.Password, out SqlManager manager))
@@ -45,7 +52,7 @@ public static class Program
                     fields.Columns,
                     fields.JsonElement,
                     fields.BatchSize,
-                    JArray.Parse(File.ReadAllText(fields.InputFile)), fields.Silent ? null : OnUpdate);
+                    fields.Json, fields.Silent ? null : OnUpdate);
 
                 Console.WriteLine("Done!");
 
