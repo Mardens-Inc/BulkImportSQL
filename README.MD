@@ -1,5 +1,7 @@
 # BulkImportSQL Command Line Utility
 
+This has been modified for use in Mardens Inc. utilizing our [Filemaker API](https://github.com/Mardens-Inc/Filemaker-API)
+
 This explains how to use the `BulkImportSQL` Command Line Utility. It is a handy utility designed for .NET applications, which lets you import JSON content into SQL databases.
 
 This library allows handling command-line arguments with ease and supports both required and optional arguments.
@@ -26,27 +28,34 @@ Following are the required arguments:
 
 | Short | Long       | Description                          |
 |:------|:-----------|:-------------------------------------|
-| -i    | --input    | The input of the file to be imported |
 | -s    | --server   | The server to connect to             |
 | -d    | --database | The database to connect to           |
 | -t    | --table    | The table to import to               |
 | -u    | --username | The username to connect with         |
 | -p    | --password | The password to connect with         |
 
+### Filemaker Arguments
+
+| Short | Long                | Description            |
+|:------|:--------------------|:-----------------------|
+| -fu   | --filemakerusername | The filemaker username |
+| -fp   | --filemakerpassword | The filemaker password |
+| -fd   | --filemakerdatabase | The filemaker database |
+| -fl   | --filemakerlayout   | The filemaker layout   |
+
 ## Optional Arguments
 
 In addition to the required arguments, the tool provides some optional ones. Here are those:
 
-| Short | Long        | Description                                                                                                         |
-|:------|:------------|:--------------------------------------------------------------------------------------------------------------------|
-| -c    | --columns   | The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma.  |
-| -e    | --element   | If the input json has a sub element, specify the element to import.                                                 |
-| -b    | --batch     | The batch size to import. Default is 1000                                                                           |
-| -j    | --json      | To output the results in json format, specify this flag and a file name. Ex: -j results.json                        |
-| -sm   | --silent    | This mode will not print any output to the console, perfect for headless operations                                 |
-| -cp   | --port      | The port to connect to the server. Default is 3306                                                                  |
-| -tt   | --test      | This mode will not insert any data into the database, perfect for testing the connection and parsing the input file |
-| -n    | --empty     | This will empty the table before inserting data                                                                     |
+| Short | Long      | Description                                                                                                         |
+|:------|:----------|:--------------------------------------------------------------------------------------------------------------------|
+| -c    | --columns | The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma.  |
+| -b    | --batch   | The batch size to import. Default is 1000                                                                           |
+| -j    | --json    | To output the results in json format, specify this flag and a file name. Ex: -j results.json                        |
+| -sm   | --silent  | This mode will not print any output to the console, perfect for headless operations                                 |
+| -cp   | --port    | The port to connect to the server. Default is 3306                                                                  |
+| -tt   | --test    | This mode will not insert any data into the database, perfect for testing the connection and parsing the input file |
+| -n    | --empty   | This will empty the table before inserting data                                                                     |
 
 > Note: Any arguments with a space in the value should be enclosed in double quotes. For example, -i "input.json"
 
