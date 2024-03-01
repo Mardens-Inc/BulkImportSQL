@@ -8,11 +8,6 @@ namespace BulkImportSQL.cli;
 public struct ArgumentFields()
 {
     /// <summary>
-    /// Represents the input file for bulk import.
-    /// </summary>
-    public string InputFile { get; set; } = "";
-
-    /// <summary>
     /// Represents the server property used for connecting to a database server.
     /// </summary>
     public string Server { get; set; } = "";
@@ -58,14 +53,6 @@ public struct ArgumentFields()
     public int BatchSize { get; set; } = 1000;
 
     /// <summary>
-    /// Gets or sets the number of processes to use for importing data in parallel.
-    /// </summary>
-    /// <remarks>
-    /// The default value is the number of processors on the system.
-    /// </remarks>
-    public int NumberOfProcesses { get; set; } = Environment.ProcessorCount;
-
-    /// <summary>
     /// Represents the optional JSON file parameter for the command line utility.
     /// </summary>
     /// <remarks>
@@ -100,4 +87,25 @@ public struct ArgumentFields()
     /// This mode will not insert any data into the database, perfect for testing the connection and parsing the input file.
     /// </summary>
     public bool TestMode { get; set; } = false;
+
+
+    /// <summary>
+    /// Represents the FileMaker username for authentication.
+    /// </summary>
+    public string FilemakerUsername { get; set; }
+
+    /// <summary>
+    /// Represents the Filemaker password used for authentication.
+    /// </summary>
+    public string FilemakerPassword { get; set; }
+
+    /// <summary>
+    /// Represents the properties of a Filemaker database.
+    /// </summary>
+    public string FilemakerDatabase { get; set; }
+
+    /// <summary>
+    /// Represents a Filemaker layout property.
+    /// </summary>
+    public string FilemakerLayout { get; set; }
 }
