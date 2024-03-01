@@ -17,7 +17,6 @@ public sealed class CommandLine
         _optionsManager = new OptionsManager("BulkImportSQL");
 
         // Define command line arguments that are required for the application
-        _optionsManager.Add(new Option("i", "input", true, true, "The input of the file to be imported"));
         _optionsManager.Add(new Option("s", "server", true, true, "The server to connect to"));
         _optionsManager.Add(new Option("d", "database", true, true, "The database to connect to"));
         _optionsManager.Add(new Option("t", "table", true, true, "The table to import to"));
@@ -26,13 +25,18 @@ public sealed class CommandLine
 
         // Define command line arguments that are optional for the application
         _optionsManager.Add(new Option("c", "columns", false, true, "The columns to import, if not specified, all columns will be imported. The columns should be separated by a comma."));
-        _optionsManager.Add(new Option("e", "element", false, true, "If the input json has a sub element, specify the element to import. Ex: [{\"import_data\":{\"column1\":1,\"column2\":2}}] vs [{\"column1\":1,\"column2\":2}]"));
         _optionsManager.Add(new Option("b", "batch", false, true, "The batch size to import. Default is 1000"));
         _optionsManager.Add(new Option("j", "json", false, true, "To output the results in json format, specify this flag and a file name. Ex: -j results.json"));
         _optionsManager.Add(new Option("sm", "silent", false, false, "This mode will not print any output to the console, perfect for headless operations"));
         _optionsManager.Add(new Option("cp", "port", false, true, "The port to connect to the server. Default is 3306"));
         _optionsManager.Add(new Option("tt", "test", false, false, "This mode will not insert any data into the database, perfect for testing the connection and parsing the input file"));
         _optionsManager.Add(new Option("n", "empty", false, false, "This will empty the table before inserting data"));
+
+        // Filemaker API
+        _optionsManager.Add(new Option("fu", "filemakerusername", true, true, "The filemaker username"));
+        _optionsManager.Add(new Option("fp", "filemakerpassword", true, true, "The filemaker password"));
+        _optionsManager.Add(new Option("fd", "filemakerdatabase", true, true, "The filemaker database"));
+        _optionsManager.Add(new Option("fl", "filemakerlayout", true, true, "The filemaker layout"));
     }
 
     /// <summary>
@@ -56,25 +60,25 @@ public sealed class CommandLine
             // Parsing additional parameters and organize them into an ArgumentFields struct
             bool silent = parser.IsPresent("sm");
             if (silent) Console.SetOut(TextWriter.Null);
-            string inputFile = GetInputFile(parser);
-            JArray json = GetJson(inputFile);
+
             return new ArgumentFields()
             {
-                InputFile = inputFile,
                 Server = server,
                 Port = GetConnectionPort(parser),
                 Database = database,
                 Table = table,
-                Json = json,
                 Username = username,
                 Password = password,
                 Silent = silent,
                 Columns = GetColumns(parser),
-                JsonElement = GetJsonElement(parser, json),
                 BatchSize = GetBatchSize(parser),
                 JsonFile = GetJsonOutputFile(parser),
                 EmptyBeforeInsertion = parser.IsPresent("n"),
-                TestMode = parser.IsPresent("tt")
+                TestMode = parser.IsPresent("tt"),
+                FilemakerUsername = parser.IsPresent("fu", out string fmu) ? fmu : "",
+                FilemakerPassword = parser.IsPresent("fp", out string fmp) ? fmp : "",
+                FilemakerDatabase = parser.IsPresent("fd", out string fmd) ? fmd : "",
+                FilemakerLayout = parser.IsPresent("fl", out string fml) ? fml : "",
             };
         }
         // If any Argument Exception is encountered, display error message and exit with InvalidArguments code
@@ -127,65 +131,6 @@ public sealed class CommandLine
     /// <returns>An array of strings representing the columns specified by the user. If no columns are specified, an empty array is returned.</returns>
     private static string[]? GetColumns(OptionsParser parser) => parser.IsPresent("c", out string columns) ? columns.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 
-    /// <summary>
-    /// Gets the full path of the input file.
-    /// </summary>
-    /// <param name="parser">The options parser.</param>
-    /// <returns>The full path of the input file.</returns>
-    private static string GetInputFile(OptionsParser parser)
-    {
-        // Checking if the 'i' option is present in the options parser
-        parser.IsPresent("i", out string input);
-        // Get the full path of the input file
-        input = Path.GetFullPath(input);
-        if (!File.Exists(input))
-        {
-            // Throw an exception if the file does not exist
-            throw new ArgumentException($"Input file is not valid or does not exist: \"{input}\"");
-        }
-
-        return input;
-    }
-
-    /// <summary>
-    /// Parses a JSON file and returns the parsed JSON as a JArray object.
-    /// </summary>
-    /// <param name="input">The path of the JSON file to parse.</param>
-    /// <returns>A JArray object representing the parsed JSON.</returns>
-    private static JArray GetJson(string input)
-    {
-        try
-        {
-            Console.WriteLine($"Reading JSON from {input}");
-            Console.WriteLine("This might take a while depending on the size of the file.");
-            return JArray.Parse(File.ReadAllText(input));
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException($"The input file is not a valid JSON file. {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Retrieves a JSON element from the input file based on the provided options parser.
-    /// </summary>
-    /// <param name="parser">The options parser containing the command line arguments.</param>
-    /// <param name="input">The path to the input file.</param>
-    /// <returns>The name of the JSON element.</returns>
-    private static string GetJsonElement(OptionsParser parser, JArray input)
-    {
-        // Checking if the 'e' option is present in the options parser
-        if (!parser.IsPresent("e", out string element)) return "";
-        // Parse the JSON in the input file
-        if (input.Count == 0)
-            // Throw an exception if the JSON is empty
-            throw new ArgumentException("The input file is empty.");
-        JToken first = input[0];
-        if (first[element] is null)
-            // Throw an exception if the JSON element does not exist in the JSON
-            throw new ArgumentException($"The element '{element}' does not exist in the input file.");
-        return element;
-    }
 
     /// <summary>
     /// Get the batch size for processing data.
